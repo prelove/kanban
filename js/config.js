@@ -1,0 +1,213 @@
+// Application configuration and i18n translations
+// All comments in English to avoid encoding issues
+
+window.APP_CONFIG = {
+  version:'2.0.0',
+  defaultLanguage:'ja',
+  defaultTheme:'light'
+};
+
+window.I18N = {
+  ja:{
+    title:'社内ダッシュボード',
+    search:'検索...',
+    modules:'モジュール',
+    close:'閉じる',
+    cancel:'キャンセル',
+    save:'保存',
+    edit:'編集',
+    delete:'削除',
+    add:'追加',
+    copy:'コピー',
+    copied:'完了✓',
+
+    cards:'件',
+    updated:'更新',
+    author:'作成者',
+    type:'種類',
+    content:'内容',
+
+    adminMode:'🛠️ 管理モード',
+    enableEdit:'編集モード',
+    disableEdit:'編集を閉じる',
+    addCard:'カード追加',
+    exportJSON:'JSON出力',
+    importJSON:'JSON読込',
+    resetData:'データ初期化',
+
+    saved:'✅ 保存しました',
+    deleted:'🗑️ 削除しました',
+    added:'✅ 追加しました',
+    reset:'🔄 初期化しました',
+    exported:'💾 出力しました',
+    imported:'✅ 読み込みました',
+
+    editCard:'カード編集',
+    titleJa:'タイトル(日本語)',
+    titleZh:'タイトル(中文)',
+    titleEn:'タイトル(English)',
+    description:'説明',
+    priority:'優先度',
+    tags:'タグ',
+    expiryDate:'有効期限',
+
+    flashcardMode:'🎴 闪卡モード',
+    gridMode:'📊 グリッド',
+    listMode:'📋 リスト',
+    previous:'⬅ 前',
+    next:'➡ 次',
+    pin:'⭐',
+    autoPlay:'自動再生',
+    shuffle:'シャッフル',
+    addColumnText: 'カラム追加',
+
+    confirmDelete:'削除しますか？',
+    confirmReset:'全データを初期化しますか？',
+    noModule:'モジュールを選択してください',
+    copyFailed:'コピー失敗',
+    saveFailed:'保存失敗',
+    jsonError:'JSONエラー',
+
+    editModeIndicator:'✏️ 編集モード - ダブルクリックで編集',
+    adminActive:'🛠️ 管理モード起動'
+  },
+
+  zh:{
+    title:'内部看板',
+    search:'搜索...',
+    modules:'模块',
+    close:'关闭',
+    cancel:'取消',
+    save:'保存',
+    edit:'编辑',
+    delete:'删除',
+    add:'添加',
+    copy:'复制',
+    copied:'已复制✓',
+
+    cards:'项',
+    updated:'更新',
+    author:'作者',
+    type:'类型',
+    content:'内容',
+
+    adminMode:'🛠️ 管理模式',
+    enableEdit:'开启编辑',
+    disableEdit:'关闭编辑',
+    addCard:'添加卡片',
+    exportJSON:'导出JSON',
+    importJSON:'导入JSON',
+    resetData:'重置数据',
+
+    saved:'✅ 已保存',
+    deleted:'🗑️ 已删除',
+    added:'✅ 已添加',
+    reset:'🔄 已重置',
+    exported:'💾 已导出',
+    imported:'✅ 已导入',
+
+    editCard:'编辑卡片',
+    titleJa:'标题(日本語)',
+    titleZh:'标题(中文)',
+    titleEn:'标题(English)',
+    description:'描述',
+    priority:'优先级',
+    tags:'标签',
+    expiryDate:'过期日期',
+
+    flashcardMode:'🎴 闪卡模式',
+    gridMode:'📊 网格',
+    listMode:'📋 列表',
+    previous:'⬅ 上一张',
+    next:'➡ 下一张',
+    pin:'⭐',
+    autoPlay:'自动播放',
+    shuffle:'打乱',
+	addColumnText: '添加列',
+
+    confirmDelete:'确定删除？',
+    confirmReset:'确定重置所有数据？',
+    noModule:'请选择模块',
+    copyFailed:'复制失败',
+    saveFailed:'保存失败',
+    jsonError:'JSON格式错误',
+
+    editModeIndicator:'✏️ 编辑��式 - 双击卡片编辑',
+    adminActive:'🛠️ 管理模式已激活'
+  },
+
+  en:{
+    title:'Dashboard',
+    search:'Search...',
+    modules:'MODULES',
+    close:'Close',
+    cancel:'Cancel',
+    save:'Save',
+    edit:'Edit',
+    delete:'Delete',
+    add:'Add',
+    copy:'Copy',
+    copied:'Copied✓',
+
+    cards:'items',
+    updated:'Updated',
+    author:'Author',
+    type:'Type',
+    content:'Content',
+
+    adminMode:'🛠️ Admin Mode',
+    enableEdit:'Enable Edit',
+    disableEdit:'Disable Edit',
+    addCard:'Add Card',
+    exportJSON:'Export JSON',
+    importJSON:'Import JSON',
+    resetData:'Reset Data',
+
+    saved:'✅ Saved',
+    deleted:'🗑️ Deleted',
+    added:'✅ Added',
+    reset:'🔄 Reset',
+    exported:'💾 Exported',
+    imported:'✅ Imported',
+
+    editCard:'Edit Card',
+    titleJa:'Title(日本語)',
+    titleZh:'Title(中文)',
+    titleEn:'Title(English)',
+    description:'Description',
+    priority:'Priority',
+    tags:'Tags',
+    expiryDate:'Expiry Date',
+
+    flashcardMode:'🎴 Flashcard',
+    gridMode:'📊 Grid',
+    listMode:'📋 List',
+    previous:'⬅ Prev',
+    next:'➡ Next',
+    pin:'⭐',
+    autoPlay:'Auto Play',
+    shuffle:'Shuffle',
+	addColumnText: 'Add Column',
+
+    confirmDelete:'Delete this card?',
+    confirmReset:'Reset all data?',
+    noModule:'Please select a module',
+    copyFailed:'Copy failed',
+    saveFailed:'Save failed',
+    jsonError:'JSON parse error',
+
+    editModeIndicator:'✏️ Edit Mode - Double click to edit',
+    adminActive:'🛠️ Admin Mode Activated'
+  }
+};
+
+// Helper function to get translated text
+window.t = function(key) {
+  return window.I18N[window.APP.lang][key] || key;
+};
+
+// Helper function to get localized object text
+window.txt = function(obj) {
+  if (typeof obj === 'string') return obj;
+  return obj[window.APP.lang] || obj.ja || obj.en || '';
+};

@@ -1,0 +1,173 @@
+/* Theme-specific styles and overrides */
+
+/* Light theme specific */
+[data-theme="light"] {
+  --glass-effect: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] body {
+  background:  linear-gradient(135deg, #f5f7fa 0%, #e8f0fe 100%);
+}
+
+/* Dark theme specific */
+[data-theme="dark"] {
+  --glass-effect: rgba(35, 38, 45, 0.9);
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, #1a1d23 0%, #23262d 100%);
+}
+
+/* Card theming */
+[data-theme="light"] .card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .card:hover {
+  box-shadow:  0 8px 16px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] .card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+}
+
+/* Priority badge colors */
+. priority-high {
+  color: var(--priority-high);
+}
+
+.priority-medium {
+  color: var(--priority-medium);
+}
+
+.priority-low {
+  color: var(--priority-low);
+}
+
+/* Status indicators */
+.status-active {
+  color: var(--status-active);
+}
+
+.status-archived {
+  color: var(--status-archived);
+  opacity: 0.6;
+}
+
+.status-expired {
+  color: var(--status-expired);
+}
+
+/* Expiry warning */
+.card. expiring-soon {
+  border-left: 4px solid var(--status-expired);
+}
+
+.card.expired {
+  border-left: 4px solid var(--priority-high);
+  opacity: 0.7;
+}
+
+/* Tag styling */
+.tag {
+  display: inline-block;
+  background: var(--accent-bg);
+  color: var(--accent-primary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size:  12px;
+  font-weight:  500;
+  margin-right: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .tag {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px var(--shadow-md);
+}
+
+/* Code block styling */
+pre {
+  background: var(--bg-tertiary);
+  border:  1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  overflow-x:  auto;
+  font-family: 'Courier New', 'Monaco', monospace;
+  font-size: 13px;
+  line-height:  1.5;
+}
+
+code {
+  background: var(--bg-tertiary);
+  padding: 2px 6px;
+  border-radius:  3px;
+  font-family: 'Courier New', 'Monaco', monospace;
+}
+
+/* List styling */
+ul, ol {
+  margin-left: 24px;
+  margin-top: 8px;
+}
+
+li {
+  margin-bottom:  6px;
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius:  12px;
+  font-size:  12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+. badge-primary {
+  background:  var(--accent-bg);
+  color: var(--accent-primary);
+}
+
+.badge-success {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.badge-warning {
+  background: #fef7e0;
+  color: #f57c00;
+}
+
+.badge-danger {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+[data-theme="dark"] .badge-success {
+  background: #1b5e20;
+  color:  #81c784;
+}
+
+[data-theme="dark"] .badge-warning {
+  background: #3e2723;
+  color: #ffb74d;
+}
+
+[data-theme="dark"] .badge-danger {
+  background: #b71c1c;
+  color: #ef5350;
+}

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internal Dashboard</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <style>
+    .modal-overlay {
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.7);
+      z-index:2000;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      backdrop-filter:blur(4px);
+    }
+
+    .modal-overlay.active {
+      display:flex;
+    }
+
+    .modal {
+      background:var(--bg-secondary);
+      border:2px solid var(--border-color);
+      border-radius:16px;
+      padding:28px;
+      max-width:700px;
+      width:90%;
+      max-height:85vh;
+      overflow-y:auto;
+      box-shadow:0 20px 60px rgba(0,0,0,0.15);
+      animation:scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] .modal {
+      background:#ffffff;
+      box-shadow:0 20px 60px rgba(0,0,0,0.12);
+    }
+
+    .modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:24px;
+      padding-bottom:16px;
+      border-bottom:2px solid var(--border-color);
+    }
+
+    [data-theme="light"] .modal-header {
+      border-bottom-color:#e0e0e0;
+    }
+
+    .modal-title {
+      font-size:20px;
+      font-weight:600;
+      color:var(--text-primary);
+    }
+
+    .modal-close {
+      background:none;
+      border:none;
+      font-size:24px;
+      cursor:pointer;
+      color:var(--text-secondary);
+      transition:all 0.2s ease;
+      padding:0;
+      width:32px;
+      height:32px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .modal-close:hover {
+      color:var(--text-primary);
+      transform:scale(1.2);
+    }
+
+    .modal-body {
+      margin-bottom:20px;
+    }
+
+    .form-group {
+      margin-bottom:16px;
+    }
+
+    .form-label {
+      display:block;
+      margin-bottom:8px;
+      font-weight:500;
+      font-size:14px;
+      color:var(--text-primary);
+    }
+
+    .form-input {
+      width:100%;
+      padding:12px 14px;
+      border:2px solid var(--border-color);
+      border-radius:8px;
+      background:var(--bg-secondary);
+      color:var(--text-primary);
+      font-size:14px;
+      font-family:inherit;
+      transition:all 0.2s ease;
+    }
+
+    [data-theme="light"] .form-input {
+      background:#ffffff;
+      border-color:#d0d0d0;
+    }
+
+    .form-input:focus {
+      outline:none;
+      border-color:var(--accent-primary);
+      box-shadow:0 0 0 3px var(--accent-bg);
+    }
+
+    [data-theme="light"] .form-input:focus {
+      background:#ffffff;
+      border-color:var(--accent-primary);
+      box-shadow:0 0 0 3px rgba(26, 115, 232, 0.1);
+    }
+
+    .form-input[type="date"] {
+      cursor:pointer;
+    }
+
+    .modal-footer {
+      display:flex;
+      justify-content:flex-end;
+      gap:12px;
+      margin-top:24px;
+      padding-top:16px;
+      border-top:1px solid var(--border-color);
+    }
+
+    [data-theme="light"] .modal-footer {
+      border-top-color:#e0e0e0;
+    }
+
+    .btn {
+      padding:12px 24px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:14px;
+      transition:all 0.2s ease;
+      font-family:inherit;
+    }
+
+    .btn-primary {
+      background:var(--accent-primary);
+      color:white;
+    }
+
+    .btn-primary:hover {
+      background:var(--accent-hover);
+      transform:translateY(-2px);
+      box-shadow:0 4px 12px rgba(26, 115, 232, 0.3);
+    }
+
+    .btn-secondary {
+      background:var(--bg-tertiary);
+      color:var(--text-primary);
+      border:1px solid var(--border-light);
+    }
+
+    [data-theme="light"] .btn-secondary {
+      background:#f5f5f5;
+      border-color:#d0d0d0;
+    }
+
+    .btn-secondary:hover {
+      background:var(--border-color);
+    }
+
+    .admin-toolbar {
+      position:fixed;
+      bottom:20px;
+      right:20px;
+      background:var(--bg-secondary);
+      border:2px solid var(--border-color);
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 8px 24px var(--shadow-md);
+      z-index:1001;
+      min-width:280px;
+      display:none;
+      max-height:60vh;
+      overflow-y:auto;
+    }
+
+    .admin-toolbar.active {
+      display:block;
+      animation:slideUp 0.3s ease;
+    }
+
+    .admin-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+      padding-bottom:12px;
+      border-bottom:2px solid var(--border-color);
+    }
+
+    .admin-title {
+      font-weight:600;
+      font-size:16px;
+      color:var(--text-primary);
+    }
+
+    .admin-btn {
+      width:100%;
+      padding:12px 16px;
+      margin-bottom:8px;
+      background:var(--bg-tertiary);
+      border:1px solid var(--border-light);
+      border-radius:8px;
+      cursor:pointer;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      color:var(--text-primary);
+      transition:all 0.2s ease;
+      font-size:14px;
+      font-weight:500;
+      font-family:inherit;
+    }
+
+    .admin-btn:hover {
+      background:var(--accent-primary);
+      color:white;
+      border-color:var(--accent-primary);
+      transform:translateX(4px);
+    }
+
+    .admin-btn.danger:hover {
+      background:#ea4335;
+      border-color:#ea4335;
+    }
+
+    .edit-mode-indicator {
+      position:fixed;
+      top:80px;
+      right:20px;
+      background:var(--accent-primary);
+      color:white;
+      padding:12px 20px;
+      border-radius:8px;
+      font-weight:600;
+      font-size:14px;
+      box-shadow:0 4px 12px var(--shadow-md);
+      z-index:1000;
+      display:none;
+    }
+
+    .edit-mode-indicator.active {
+      display:block;
+      animation:slideDown 0.3s ease, pulse 2s infinite;
+    }
+
+    @media (max-width:768px) {
+      .admin-toolbar {
+        min-width:calc(100vw - 40px);
+        bottom:10px;
+        right:10px;
+        left:10px;
+      }
+
+      .edit-mode-indicator {
+        top:90px;
+        right:10px;
+        left:10px;
+        width:auto;
+        font-size:12px;
+        padding:8px 16px;
+      }
+
+      .modal {
+        max-width:95%;
+        padding:20px;
+      }
+
+      .btn {
+        padding:10px 16px;
+        font-size:13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+  <div class="header-left">
+    <button class="menu-toggle" onclick="window.UIRenderer.toggleSidebar()">☰</button>
+    <div class="header-title" id="headerTitle">Dashboard</div>
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="searchInput" 
+             placeholder="Search..." oninput="window.handleSearch()">
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="viewSwitcher" style="display:flex; gap:4px;">
+      <button onclick="window.UIRenderer.currentView='grid'; window.UIRenderer.renderMainContent()" 
+              style="padding:6px 12px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.2s;" 
+              title="Grid View">📊 Grid</button>
+      <button onclick="window.UIRenderer.currentView='list'; window.UIRenderer.renderMainContent()" 
+              style="padding:6px 12px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.2s;" 
+              title="List View">📋 List</button>
+      <button onclick="window.UIRenderer.currentView='flashcard'; window.UIRenderer.renderMainContent()" 
+              style="padding:6px 12px; background:var(--accent-primary); color:white; border:1px solid var(--accent-primary); border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; transition:all 0.2s;" 
+              title="Flashcard View">🎴 Flash</button>
+    </div>
+    <div class="lang-switcher" id="langSwitcher"></div>
+    <button class="icon-btn" onclick="window.UIRenderer.toggleTheme()" title="Toggle Theme">
+      <span id="themeIcon">🌙</span>
+    </button>
+  </div>
+</header>
+
+  <div class="app-wrapper">
+    <div class="app-content">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main-content" id="mainContent"></main>
+    </div>
+  </div>
+
+	<div class="admin-toolbar" id="adminToolbar">
+	  <div class="admin-header">
+	    <div class="admin-title" id="adminTitle">🛠️ Admin Mode</div>
+	    <button class="modal-close" onclick="document.getElementById('adminToolbar').classList.remove('active')">✕</button>
+	  </div>
+	  <button class="admin-btn" onclick="window.EventHandler.toggleEditMode()">
+	    <span>✏️</span><span id="editModeText">Enable Edit</span>
+	  </button>
+	  <button class="admin-btn" onclick="window.EventHandler.addNewModule()">
+	    <span>📁</span><span id="addModuleText">Add Module</span>
+	  </button>
+	  <button class="admin-btn" onclick="window.EventHandler.addNewColumn()">
+	    <span>📊</span><span id="addColumnText">Add Column</span>
+	  </button>
+	  <button class="admin-btn" onclick="window.EventHandler.addNewCard()">
+	    <span>➕</span><span id="addCardText">Add Card</span>
+	  </button>
+	  <button class="admin-btn" onclick="window.StorageManager.downloadJSON(window.APP.db)">
+	    <span>📥</span><span id="exportText">Export JSON</span>
+	  </button>
+	  <button class="admin-btn" onclick="window.StorageManager.importJSON(function(data) { window.APP.db = data; window.UIRenderer.renderSidebar(); window.UIRenderer.renderMainContent(); })">
+	    <span>📤</span><span id="importText">Import JSON</span>
+	  </button>
+	  <button class="admin-btn danger" onclick="window.EventHandler.resetData()">
+	    <span>🔄</span><span id="resetText">Reset Data</span>
+	  </button>
+	</div>
+
+  <div class="edit-mode-indicator" id="editModeIndicator">✏️ Edit Mode - Double click cards to edit</div>
+
+  <div id="toast"></div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="if(event.target === this) window.EventHandler.closeEditModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Edit Card</div>
+        <button class="modal-close" onclick="window.EventHandler.closeEditModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="window.EventHandler.closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="window.EventHandler.saveEditModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.WIKI_DATA = [
+      {
+        "id":"product-a",
+        "name":{"ja":"製品 A", "zh":"产品线 A", "en":"Product A"},
+        "icon":"🚀",
+        "columns":[
+          {
+            "id":"links-a",
+            "name":{"ja":"常用入口", "zh":"常用入口", "en":"Quick Links"},
+            "cards":[
+              {
+                "id":"a1",
+                "title":{"ja":"管理画面", "zh":"管理后台", "en":"Admin Portal"},
+                "type":"url",
+                "content":"https://product-a.example.com/admin",
+                "priority":"high",
+                "pinned":true,
+                "tags":["important"],
+                "status":"active",
+                "updatedAt":"2026-01-20",
+                "author":"Tanaka"
+              }
+            ]
+          }
+        ]
+      }
+    ];
+    window.WIKI_DATA_INITIAL = JSON.parse(JSON.stringify(window.WIKI_DATA));
+  </script>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/flashcard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

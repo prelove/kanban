@@ -1,0 +1,290 @@
+/* Animation effects and transitions */
+
+/* Slide animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity:  1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Scale animations */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity:  0.7;
+  }
+}
+
+/* Bounce animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Shake animation */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Spin animation */
+@keyframes spin {
+  from {
+    transform:  rotate(0deg);
+  }
+  to {
+    transform:  rotate(360deg);
+  }
+}
+
+/* Flash animation */
+@keyframes flash {
+  0%, 50%, 100% {
+    opacity:  1;
+  }
+  25%, 75% {
+    opacity:  0.5;
+  }
+}
+
+/* Flip animation */
+@keyframes flipX {
+  from {
+    transform: rotateX(0deg);
+  }
+  to {
+    transform: rotateX(180deg);
+  }
+}
+
+@keyframes flipY {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform:  rotateY(180deg);
+  }
+}
+
+/* Apply animations to elements */
+
+/* Modal animations */
+.modal-overlay.active {
+  animation: fadeIn 0.3s ease;
+}
+
+.modal {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Admin toolbar animation */
+.admin-toolbar.active {
+  animation: slideUp 0.3s ease;
+}
+
+/* Edit mode indicator animation */
+.edit-mode-indicator.active {
+  animation: slideDown 0.3s ease, pulse 2s infinite;
+}
+
+/* Card entrance animation */
+.card {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Card hover animations */
+.card.hidden {
+  animation: fadeOut 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card.visible {
+  animation: fadeIn 0.3s ease;
+  opacity: 1;
+}
+
+/* Toast animation */
+#toast.show {
+  animation: slideIn 0.3s ease;
+}
+
+/* Button press animation */
+button: active {
+  animation: scaleOut 0.1s ease;
+}
+
+/* Flashcard flip animation */
+.flashcard-flip {
+  animation: flipY 0.6s ease-in-out;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+/* Attention seekers */
+.attention-shake {
+  animation: shake 0.5s ease;
+}
+
+.attention-bounce {
+  animation: bounce 0.6s ease;
+}
+
+.attention-pulse {
+  animation: pulse 1s ease infinite;
+}
+
+.attention-flash {
+  animation:  flash 1s ease infinite;
+}
+
+/* Transition helpers */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+.transition-slow {
+  transition: all 0.6s ease;
+}
+
+/* Smooth height transitions */
+.transition-height {
+  transition: height 0.3s ease, opacity 0.3s ease;
+}
+
+/* Responsive animations - reduce on mobile */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Faster animations on mobile */
+  .modal {
+    animation:  scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .admin-toolbar.active {
+    animation: slideUp 0.2s ease;
+  }
+
+  /* Reduce card animations on mobile */
+  .card {
+    animation: none;
+  }
+}

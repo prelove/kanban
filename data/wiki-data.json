@@ -1,0 +1,124 @@
+[
+  {
+    "id":  "product-a",
+    "name": {
+      "ja": "製品 A",
+      "zh": "产品线 A",
+      "en": "Product A"
+    },
+    "icon": "🚀",
+    "columns": [
+      {
+        "id": "links-a",
+        "name": {
+          "ja": "常用入口",
+          "zh": "常用入口",
+          "en": "Quick Links"
+        },
+        "cards": [
+          {
+            "id": "a1",
+            "title": {
+              "ja": "管理画面",
+              "zh": "管理后台",
+              "en": "Admin Portal"
+            },
+            "type": "url",
+            "content": "https://product-a.example.com/admin",
+            "description": {
+              "ja": "製品A管理画面",
+              "zh": "产品A管理界面",
+              "en": "Admin interface"
+            },
+            "priority":  "high",
+            "pinned": false,
+            "tags": ["important"],
+            "status": "active",
+            "updatedAt": "2026-01-20",
+            "author": "Tanaka"
+          },
+          {
+            "id":  "a2",
+            "title": {
+              "ja": "API ドキュメント",
+              "zh": "API 文档",
+              "en": "API Documentation"
+            },
+            "type": "url",
+            "content": "https://api-docs.example.com",
+            "priority": "medium",
+            "pinned": false,
+            "tags": ["reference"],
+            "status": "active",
+            "updatedAt":  "2026-01-15",
+            "author": "Suzuki"
+          }
+        ]
+      },
+      {
+        "id":  "config-a",
+        "name":  {
+          "ja": "設定",
+          "zh": "配置",
+          "en": "Config"
+        },
+        "cards": [
+          {
+            "id": "a3",
+            "title": {
+              "ja": "DB接続",
+              "zh": "数据库连接",
+              "en": "DB Config"
+            },
+            "type": "code",
+            "content": "jdbc:mysql://prod-db: 3306/productA\nUser:  readonly\nPassword: [See vault]",
+            "priority": "high",
+            "pinned": true,
+            "tags": ["security"],
+            "status": "active",
+            "expiryDate": "2026-02-28",
+            "updatedAt": "2026-01-18",
+            "author": "Admin"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id":  "common",
+    "name": {
+      "ja": "共通",
+      "zh": "通用",
+      "en":  "Common"
+    },
+    "icon": "⚙️",
+    "columns": [
+      {
+        "id": "tools",
+        "name": {
+          "ja": "ツール",
+          "zh": "工具",
+          "en": "Tools"
+        },
+        "cards": [
+          {
+            "id": "c1",
+            "title": {
+              "ja": "Jira",
+              "zh": "Jira",
+              "en":  "Jira"
+            },
+            "type": "url",
+            "content": "https://jira.company.com",
+            "priority": "medium",
+            "pinned": false,
+            "tags": ["tool"],
+            "status": "active",
+            "updatedAt":  "2026-01-10",
+            "author": "Admin"
+          }
+        ]
+      }
+    ]
+  }
+]
