@@ -5,6 +5,7 @@ window.StorageManager = {
   STORE_NAME:'dashboardStore',
   DB_VERSION:1,
   db:null,
+  encryptionKey:null,
 
   // Initialize IndexedDB
   initIndexedDB:function() {
@@ -110,13 +111,27 @@ window.StorageManager = {
   },
 
   // Save database (uses IndexedDB first, then localStorage)
-  saveDatabase:async function(db) {
-    await this.saveToIndexedDB('dashboard_db', db);
+  saveDatabase:async function(db, trash) {
+    const payload = {
+      db:db || window.APP.db || [],
+      trash:trash || window.APP.trash || []
+    };
+    const encrypted = await this.encryptData(payload);
+    await this.saveToIndexedDB('dashboard_db', encrypted);
   },
 
   // Load database
   loadDatabase:async function() {
-    return await this.loadFromIndexedDB('dashboard_db');
+    const stored = await this.loadFromIndexedDB('dashboard_db');
+    if (!stored) return null;
+    if (typeof stored === 'string') {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        return null;
+      }
+    }
+    return await this.decryptData(stored);
   },
 
   // Save theme preference
@@ -205,4 +220,92 @@ window.StorageManager = {
       }
     });
   }
+};
+
+// Encryption helpers
+window.StorageManager.getEncryptionKey = async function() {
+  if (this.encryptionKey) return this.encryptionKey;
+
+  const saltKey = 'dashboard_crypto_salt';
+  let salt = localStorage.getItem(saltKey);
+  if (!salt) {
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    salt = this.toBase64(saltBytes);
+    localStorage.setItem(saltKey, salt);
+  }
+
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode('dashboard-secure-v1:' + navigator.userAgent),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  const derivedKey = await crypto.subtle.deriveKey(
+    {
+      name:'PBKDF2',
+      salt:this.fromBase64(salt),
+      iterations:100000,
+      hash:'SHA-256'
+    },
+    keyMaterial,
+    { name:'AES-GCM', length:256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+
+  this.encryptionKey = derivedKey;
+  return derivedKey;
+};
+
+window.StorageManager.encryptData = async function(data) {
+  const key = await this.getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoded = new TextEncoder().encode(JSON.stringify(data));
+  const encrypted = await crypto.subtle.encrypt(
+    { name:'AES-GCM', iv:iv },
+    key,
+    encoded
+  );
+  return {
+    v:1,
+    iv:this.toBase64(iv),
+    payload:this.toBase64(new Uint8Array(encrypted))
+  };
+};
+
+window.StorageManager.decryptData = async function(stored) {
+  if (!stored) return null;
+  if (!stored.payload || !stored.iv) return stored;
+
+  const key = await this.getEncryptionKey();
+  const decrypted = await crypto.subtle.decrypt(
+    { name:'AES-GCM', iv:this.fromBase64(stored.iv) },
+    key,
+    this.fromBase64(stored.payload)
+  );
+  const decoded = new TextDecoder().decode(decrypted);
+  return JSON.parse(decoded);
+};
+
+window.StorageManager.toBase64 = function(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+};
+
+window.StorageManager.fromBase64 = function(base64) {
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 };

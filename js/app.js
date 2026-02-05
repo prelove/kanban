@@ -5,6 +5,7 @@ window.APP = {
   theme:'light',
   currentModule:null,
   db:[],
+  trash:[],
   editMode:false,
   editingCard:null
 };

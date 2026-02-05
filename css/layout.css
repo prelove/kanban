@@ -196,6 +196,16 @@
   top:120px;
 }
 
+.sidebar-footer {
+  margin-top:auto;
+  padding:16px 24px 0 24px;
+  border-top:1px solid var(--border-color);
+}
+
+[data-theme="light"] .sidebar-footer {
+  border-top-color:#e0e0e0;
+}
+
 .sidebar-title {
   padding:0 24px 16px 24px;
   font-size:12px;

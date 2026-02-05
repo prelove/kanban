@@ -113,6 +113,8 @@ window.UIRenderer = {
           </div>
           ${window.APP.editMode ? `
             <div class="nav-item-actions" onclick="event.stopPropagation()">
+              <button class="nav-action-btn" title="${t('moveUp')}" onclick="window.EventHandler.moveModule('${module.id}', -1)">⬆️</button>
+              <button class="nav-action-btn" title="${t('moveDown')}" onclick="window.EventHandler.moveModule('${module.id}', 1)">⬇️</button>
               <button class="nav-action-btn" title="Edit" onclick="window.EventHandler.editModule('${module.id}')">✏️</button>
               <button class="nav-action-btn" title="Delete" onclick="window.EventHandler.deleteModule('${module.id}')">🗑️</button>
             </div>
@@ -121,6 +123,16 @@ window.UIRenderer = {
       `;
       nav.innerHTML += itemHtml;
     }
+
+    const footer = document.createElement('div');
+    footer.className = 'sidebar-footer';
+    footer.innerHTML = `
+      <button class="trash-btn" onclick="window.EventHandler.openTrashModal()">
+        🗑️ ${t('trash')}
+        <span class="trash-count ${window.APP.trash && window.APP.trash.length ? '' :'hidden'}">${window.APP.trash ? window.APP.trash.length : 0}</span>
+      </button>
+    `;
+    sidebar.appendChild(footer);
   },
 
   renderMainContent:function() {
@@ -173,6 +185,8 @@ renderGridView:function() {
             </div>
             ${window.APP.editMode ? `
               <div style="display:flex; gap:4px; flex-shrink:0;">
+                <button class="move-btn" title="${t('moveUp')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', -1)">⬆️</button>
+                <button class="move-btn" title="${t('moveDown')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', 1)">⬇️</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Edit" onclick="event.stopPropagation(); window.EventHandler.editColumn('${column.id}', '${window.APP.currentModule}')">✏️</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Delete" onclick="event.stopPropagation(); window.EventHandler.deleteColumn('${column.id}', '${window.APP.currentModule}')">🗑️</button>
               </div>
@@ -264,6 +278,10 @@ renderGridView:function() {
 
     if (window.APP.editMode) {
       actionsHtml += `
+        <button class="move-btn" title="${t('moveUp')}"
+                onclick="event.stopPropagation(); window.EventHandler.moveCard('${moduleId}', '${columnId}', '${card.id}', -1)">⬆️</button>
+        <button class="move-btn" title="${t('moveDown')}"
+                onclick="event.stopPropagation(); window.EventHandler.moveCard('${moduleId}', '${columnId}', '${card.id}', 1)">⬇️</button>
         <button class="edit-btn" title="${t('edit')}"
                 onclick="window.EventHandler.openEditModal('${card.id}', '${columnId}', '${moduleId}')">✏️</button>
         <button class="delete-btn" title="${t('delete')}"
