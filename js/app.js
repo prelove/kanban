@@ -7,7 +7,8 @@ window.APP = {
   db:[],
   trash:[],
   editMode:false,
-  editingCard:null
+  editingCard:null,
+  dashboardHidden:false
 };
 
 // Initialize application
@@ -22,6 +23,7 @@ async function initializeApp() {
   // Load preferences
   window.APP.lang = window.StorageManager.loadLanguage();
   window.APP.theme = window.StorageManager.loadTheme();
+  window.APP.dashboardHidden = window.StorageManager.loadDashboardVisibility();
 
   // Set initial data
   let storedDB = null;

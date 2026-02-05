@@ -1,5 +1,15 @@
 /* Layout structure - header, sidebar, main content */
 
+:root {
+  --content-offset:100px;
+  --sidebar-offset:100px;
+}
+
+body.dashboard-hidden {
+  --content-offset:20px;
+  --sidebar-offset:20px;
+}
+
 .app-wrapper {
   display:flex;
   flex-direction:column;
@@ -11,7 +21,7 @@
   flex:1;
   gap:20px;
   padding:0 20px 40px 20px;
-  margin-top:100px;
+  margin-top:var(--content-offset);
 }
 
 .header {
@@ -31,6 +41,10 @@
   box-shadow:0 2px 8px var(--shadow-sm);
   transition:all 0.3s ease;
   width:calc(100% - 40px);
+}
+
+body.dashboard-hidden .header {
+  display:none;
 }
 
 [data-theme="light"] .header {
@@ -222,6 +236,29 @@
   transform:scale(1.05);
 }
 
+.dashboard-toggle-floating {
+  position:fixed;
+  top:12px;
+  right:20px;
+  z-index:250;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid var(--border-light);
+  background:var(--bg-tertiary);
+  color:var(--text-primary);
+  cursor:pointer;
+  font-size:12px;
+  font-weight:600;
+  display:none;
+  box-shadow:0 2px 8px var(--shadow-sm);
+}
+
+body.dashboard-hidden .dashboard-toggle-floating {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
 .sidebar {
   width:260px;
   background-color:var(--bg-secondary);
@@ -231,10 +268,10 @@
   flex-shrink:0;
   display:flex;
   flex-direction:column;
-  max-height:calc(100vh - 160px);
+  max-height:calc(100vh - var(--sidebar-offset) - 40px);
   overflow-y:auto;
   position:sticky;
-  top:120px;
+  top:var(--sidebar-offset);
 }
 
 .sidebar-footer {
@@ -429,6 +466,11 @@
 }
 
 @media (max-width:768px) {
+  :root {
+    --content-offset:90px;
+    --sidebar-offset:90px;
+  }
+
   body {
     padding-top:0;
   }
@@ -444,7 +486,7 @@
     flex-direction:column;
     padding:0 10px 40px 10px;
     gap:12px;
-    margin-top:90px;
+    margin-top:var(--content-offset);
   }
 
   .header-left {
@@ -473,9 +515,9 @@
   .sidebar {
     position:fixed;
     left:0;
-    top:90px;
+    top:var(--sidebar-offset);
     width:260px;
-    height:calc(100vh - 90px);
+    height:calc(100vh - var(--sidebar-offset));
     transform:translateX(-100%);
     z-index:999;
     border-radius:0;

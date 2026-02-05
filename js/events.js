@@ -623,6 +623,7 @@ window.EventHandler = {
     }
 
     window.UIRenderer.renderMainContent();
+    window.UIRenderer.renderSidebar();
   },
 
   moveModule:function(moduleId, direction) {

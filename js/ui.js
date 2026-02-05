@@ -10,6 +10,7 @@ window.UIRenderer = {
     this.renderMainContent();
     this.attachUIEvents();
     this.startClock();
+    this.applyDashboardState();
   },
 
   renderHeader:function() {
@@ -48,6 +49,9 @@ window.UIRenderer = {
                   title="Flashcard View">🎴 Flash</button>
         </div>
         <div class="lang-switcher" id="langSwitcher"></div>
+        <button class="icon-btn" id="dashboardToggleBtn" onclick="window.UIRenderer.toggleDashboardBar()" title="${t('hideDashboard')}">
+          <span id="dashboardToggleText"></span>
+        </button>
         <button class="icon-btn" onclick="window.UIRenderer.toggleTheme()" title="Toggle Theme">
           <span id="themeIcon">🌙</span>
         </button>
@@ -56,6 +60,8 @@ window.UIRenderer = {
     header.innerHTML = htmlContent;
     this.renderLanguageSwitcher();
     this.updateViewButtons();
+    this.ensureFloatingDashboardToggle();
+    this.updateDashboardToggle();
   },
 
   startClock:function() {
@@ -452,11 +458,48 @@ renderGridView:function() {
     this.renderSidebar();
     this.renderMainContent();
     this.startClock();
+    this.updateDashboardToggle();
   },
 
   updateUIText:function() {
     document.getElementById('headerTitle').textContent = t('title');
     document.getElementById('searchInput').placeholder = t('search');
+  },
+
+  ensureFloatingDashboardToggle:function() {
+    if (document.getElementById('dashboardFloatingToggle')) return;
+    const btn = document.createElement('button');
+    btn.id = 'dashboardFloatingToggle';
+    btn.className = 'dashboard-toggle-floating';
+    btn.onclick = function() {
+      window.UIRenderer.toggleDashboardBar();
+    };
+    document.body.appendChild(btn);
+  },
+
+  applyDashboardState:function() {
+    document.body.classList.toggle('dashboard-hidden', window.APP.dashboardHidden);
+    this.updateDashboardToggle();
+  },
+
+  updateDashboardToggle:function() {
+    const label = window.APP.dashboardHidden ? t('showDashboard') : t('hideDashboard');
+    const headerBtn = document.getElementById('dashboardToggleBtn');
+    const headerText = document.getElementById('dashboardToggleText');
+    const floatingBtn = document.getElementById('dashboardFloatingToggle');
+
+    if (headerText) headerText.textContent = label;
+    if (headerBtn) headerBtn.title = label;
+    if (floatingBtn) {
+      floatingBtn.textContent = t('showDashboard');
+      floatingBtn.title = t('showDashboard');
+    }
+  },
+
+  toggleDashboardBar:function() {
+    window.APP.dashboardHidden = !window.APP.dashboardHidden;
+    window.StorageManager.saveDashboardVisibility(window.APP.dashboardHidden);
+    this.applyDashboardState();
   },
 
   renderListView:function() {
