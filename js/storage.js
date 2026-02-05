@@ -154,6 +154,17 @@ window.StorageManager = {
     return localStorage.getItem('dashboard_lang') || 'ja';
   },
 
+  // Save dashboard visibility
+  saveDashboardVisibility:function(isHidden) {
+    localStorage.setItem('dashboard_hidden', JSON.stringify(!!isHidden));
+  },
+
+  // Load dashboard visibility
+  loadDashboardVisibility:function() {
+    const stored = localStorage.getItem('dashboard_hidden');
+    return stored ? JSON.parse(stored) : false;
+  },
+
   // Download JSON file
   downloadJSON:function(db) {
     try {
