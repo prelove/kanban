@@ -3,8 +3,17 @@
 window.DataManager = {
   // Initialize database
   init:function(initialData) {
-    window.APP.db = window.deepClone(initialData);
-    window.StorageManager.saveDatabase(window.APP.db);
+    let dbData = initialData;
+    let trashData = [];
+
+    if (initialData && initialData.db) {
+      dbData = initialData.db;
+      trashData = initialData.trash || [];
+    }
+
+    window.APP.db = window.deepClone(dbData || []);
+    window.APP.trash = window.deepClone(trashData || []);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
   },
 
   // Get module by ID
@@ -54,7 +63,7 @@ window.DataManager = {
     for (let i = 0; i < module.columns.length; i++) {
       if (module.columns[i].id === columnId) {
         module.columns[i].cards.push(card);
-        window.StorageManager.saveDatabase(window.APP.db);
+        window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
         return true;
       }
     }
@@ -68,7 +77,7 @@ window.DataManager = {
 
     Object.assign(card, updates);
     card.updatedAt = new Date().toISOString().split('T')[0];
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     return true;
   },
 
@@ -86,7 +95,7 @@ window.DataManager = {
           }
         }
         module.columns[i].cards = newCards;
-        window.StorageManager.saveDatabase(window.APP.db);
+        window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
         return true;
       }
     }
@@ -99,7 +108,7 @@ window.DataManager = {
     if (!card) return false;
 
     card.pinned = ! card.pinned;
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     return true;
   },
 
@@ -208,7 +217,64 @@ window.DataManager = {
     if (! confirm(t('confirmReset'))) return false;
 
     window.APP.db = window.deepClone(initialData);
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.APP.trash = [];
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    return true;
+  },
+
+  reorderArray:function(list, fromIndex, toIndex) {
+    if (fromIndex === toIndex) return list;
+    const item = list.splice(fromIndex, 1)[0];
+    list.splice(toIndex, 0, item);
+    return list;
+  },
+
+  moveModule:function(moduleId, direction) {
+    const index = window.APP.db.findIndex(function(item) { return item.id === moduleId; });
+    if (index === -1) return false;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= window.APP.db.length) return false;
+    this.reorderArray(window.APP.db, index, targetIndex);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    return true;
+  },
+
+  moveColumn:function(moduleId, columnId, direction) {
+    const module = this.getModule(moduleId);
+    if (!module) return false;
+    const index = module.columns.findIndex(function(col) { return col.id === columnId; });
+    if (index === -1) return false;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= module.columns.length) return false;
+    this.reorderArray(module.columns, index, targetIndex);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    return true;
+  },
+
+  moveCard:function(moduleId, columnId, cardId, direction) {
+    const module = this.getModule(moduleId);
+    if (!module) return false;
+    const column = module.columns.find(function(col) { return col.id === columnId; });
+    if (!column) return false;
+    const index = column.cards.findIndex(function(card) { return card.id === cardId; });
+    if (index === -1) return false;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= column.cards.length) return false;
+    this.reorderArray(column.cards, index, targetIndex);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    return true;
+  },
+
+  addToTrash:function(item) {
+    window.APP.trash = window.APP.trash || [];
+    window.APP.trash.push(item);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+  },
+
+  removeTrashAt:function(index) {
+    if (!window.APP.trash || index < 0 || index >= window.APP.trash.length) return false;
+    window.APP.trash.splice(index, 1);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     return true;
   }
 };

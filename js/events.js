@@ -196,8 +196,32 @@ window.EventHandler = {
   deleteCard:function(cardId, columnId, moduleId) {
     if (!confirm(t('confirmDelete'))) return;
 
+    const module = window.DataManager.getModule(moduleId);
+    if (!module) return;
+    const column = module.columns.find(function(col) { return col.id === columnId; });
+    if (!column) return;
+    const cardIndex = column.cards.findIndex(function(card) { return card.id === cardId; });
+    const card = cardIndex >= 0 ? column.cards[cardIndex] : null;
+
+    if (!card) return;
+
+    const trashItem = {
+      id:'trash-' + Date.now(),
+      type:'card',
+      data:window.deepClone(card),
+      location:{
+        moduleId:moduleId,
+        columnId:columnId,
+        index:cardIndex
+      },
+      deletedAt:new Date().toISOString()
+    };
+
+    window.DataManager.addToTrash(trashItem);
+
     if (window.DataManager.deleteCard(moduleId, columnId, cardId)) {
       window.UIRenderer.renderMainContent();
+      window.UIRenderer.renderSidebar();
       window.showToast(t('deleted'));
     }
   },
@@ -286,25 +310,30 @@ window.EventHandler = {
 	},
 	
   deleteModule:function(moduleId) {
-    if (! confirm('Delete this module?  This cannot be undone.')) return;
+    if (! confirm(t('confirmDeleteModule'))) return;
 
-    const newDb = [];
-    for (let i = 0; i < window.APP.db.length; i++) {
-      if (window.APP.db[i].id !== moduleId) {
-        newDb.push(window.APP.db[i]);
-      }
-    }
+    const index = window.APP.db.findIndex(function(module) { return module.id === moduleId; });
+    if (index === -1) return;
+    const module = window.APP.db[index];
 
-    window.APP.db = newDb;
+    window.DataManager.addToTrash({
+      id:'trash-' + Date.now(),
+      type:'module',
+      data:window.deepClone(module),
+      location:{ index:index },
+      deletedAt:new Date().toISOString()
+    });
+
+    window.APP.db.splice(index, 1);
 
     if (window.APP.currentModule === moduleId) {
       window.APP.currentModule = window.APP.db.length > 0 ? window.APP.db[0].id :null;
     }
 
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     window.UIRenderer.renderSidebar();
     window.UIRenderer.renderMainContent();
-    window.showToast('🗑️ Module deleted');
+    window.showToast(t('deleted'));
   },
 
   editColumn:function(columnId, moduleId) {
@@ -335,10 +364,13 @@ window.EventHandler = {
   },
 
   deleteColumn:function(columnId, moduleId) {
-    if (!confirm('Delete this column and all its cards? This cannot be undone.')) return;
+    if (!confirm(t('confirmDeleteColumn'))) return;
 
     const module = window.DataManager.getModule(moduleId);
     if (!module) return;
+
+    const columnIndex = module.columns.findIndex(function(column) { return column.id === columnId; });
+    if (columnIndex === -1) return;
 
     const newColumns = [];
     for (let i = 0; i < module.columns.length; i++) {
@@ -352,10 +384,23 @@ window.EventHandler = {
       return;
     }
 
+    const column = module.columns[columnIndex];
+    window.DataManager.addToTrash({
+      id:'trash-' + Date.now(),
+      type:'column',
+      data:window.deepClone(column),
+      location:{
+        moduleId:moduleId,
+        index:columnIndex
+      },
+      deletedAt:new Date().toISOString()
+    });
+
     module.columns = newColumns;
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     window.UIRenderer.renderMainContent();
-    window.showToast('🗑️ Column deleted');
+    window.UIRenderer.renderSidebar();
+    window.showToast(t('deleted'));
   },
 
   openColumnSelector:function() {
@@ -507,12 +552,168 @@ window.EventHandler = {
     window.UIRenderer.renderMainContent();
   },
 
+  moveModule:function(moduleId, direction) {
+    if (window.DataManager.moveModule(moduleId, direction)) {
+      window.UIRenderer.renderSidebar();
+    }
+  },
+
+  moveColumn:function(moduleId, columnId, direction) {
+    if (window.DataManager.moveColumn(moduleId, columnId, direction)) {
+      window.UIRenderer.renderMainContent();
+    }
+  },
+
+  moveCard:function(moduleId, columnId, cardId, direction) {
+    if (window.DataManager.moveCard(moduleId, columnId, cardId, direction)) {
+      window.UIRenderer.renderMainContent();
+    }
+  },
+
+  openTrashModal:function() {
+    window.EventHandler.closeTrashModal();
+    const trash = window.APP.trash || [];
+    const modal = document.createElement('div');
+    modal.className = 'trash-modal';
+    modal.innerHTML = `
+      <div class="trash-modal-header">
+        <div class="trash-modal-title">${t('trash')}</div>
+        <button class="trash-modal-close" onclick="window.EventHandler.closeTrashModal()">✕</button>
+      </div>
+      <div class="trash-modal-body">
+        ${trash.length === 0 ? `<div class="trash-empty">${t('trashEmpty')}</div>` :''}
+        ${trash.map(function(item, index) {
+          return `
+            <div class="trash-item">
+              <div class="trash-item-info">
+                <div class="trash-item-title">${window.escapeHtml(window.EventHandler.getTrashItemTitle(item))}</div>
+                <div class="trash-item-meta">${window.EventHandler.getTrashItemMeta(item)}</div>
+              </div>
+              <div class="trash-item-actions">
+                <button class="trash-action-btn" onclick="window.EventHandler.restoreTrashItem(${index})">${t('restore')}</button>
+                <button class="trash-action-btn danger" onclick="window.EventHandler.deleteTrashItem(${index})">${t('deleteForever')}</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      ${trash.length > 0 ? `
+        <div class="trash-modal-footer">
+          <button class="trash-action-btn" onclick="window.EventHandler.restoreAllTrash()">${t('restoreAll')}</button>
+          <button class="trash-action-btn danger" onclick="window.EventHandler.emptyTrash()">${t('emptyTrash')}</button>
+        </div>
+      ` :''}
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'trash-overlay';
+    overlay.onclick = function() {
+      window.EventHandler.closeTrashModal();
+    };
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+  },
+
+  closeTrashModal:function() {
+    const modal = document.querySelector('.trash-modal');
+    const overlay = document.querySelector('.trash-overlay');
+    if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
+    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  },
+
+  getTrashItemTitle:function(item) {
+    if (!item || !item.data) return t('trashItem');
+    if (item.type === 'module') return window.txt(item.data.name);
+    if (item.type === 'column') return window.txt(item.data.name);
+    if (item.type === 'card') return window.txt(item.data.title);
+    return t('trashItem');
+  },
+
+  getTrashItemMeta:function(item) {
+    if (!item) return '';
+    const typeLabel = item.type === 'module' ? t('module') : item.type === 'column' ? t('column') : t('card');
+    return typeLabel + ' · ' + new Date(item.deletedAt).toLocaleString();
+  },
+
+  restoreTrashItem:function(index, skipModalRefresh) {
+    const item = window.APP.trash[index];
+    if (!item) return;
+
+    if (item.type === 'module') {
+      const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : window.APP.db.length;
+      const safeIndex = Math.min(Math.max(insertIndex, 0), window.APP.db.length);
+      window.APP.db.splice(safeIndex, 0, window.deepClone(item.data));
+    } else if (item.type === 'column') {
+      const module = window.DataManager.getModule(item.location.moduleId);
+      if (!module) {
+        window.showToast(t('restoreFailed'));
+        return;
+      }
+      const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : module.columns.length;
+      const safeIndex = Math.min(Math.max(insertIndex, 0), module.columns.length);
+      module.columns.splice(safeIndex, 0, window.deepClone(item.data));
+    } else if (item.type === 'card') {
+      const module = window.DataManager.getModule(item.location.moduleId);
+      if (!module) {
+        window.showToast(t('restoreFailed'));
+        return;
+      }
+      const column = module.columns.find(function(col) { return col.id === item.location.columnId; });
+      if (!column) {
+        window.showToast(t('restoreFailed'));
+        return;
+      }
+      const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : column.cards.length;
+      const safeIndex = Math.min(Math.max(insertIndex, 0), column.cards.length);
+      column.cards.splice(safeIndex, 0, window.deepClone(item.data));
+    }
+
+    window.DataManager.removeTrashAt(index);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    window.UIRenderer.renderSidebar();
+    window.UIRenderer.renderMainContent();
+    if (!skipModalRefresh) {
+      window.EventHandler.closeTrashModal();
+      window.EventHandler.openTrashModal();
+    }
+    window.showToast(t('restored'));
+  },
+
+  deleteTrashItem:function(index) {
+    if (!confirm(t('confirmDeleteForever'))) return;
+    window.DataManager.removeTrashAt(index);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    window.UIRenderer.renderSidebar();
+    window.EventHandler.closeTrashModal();
+    window.EventHandler.openTrashModal();
+  },
+
+  restoreAllTrash:function() {
+    const items = window.APP.trash.slice();
+    for (let i = items.length - 1; i >= 0; i--) {
+      window.EventHandler.restoreTrashItem(i, true);
+    }
+    window.EventHandler.closeTrashModal();
+    window.EventHandler.openTrashModal();
+  },
+
+  emptyTrash:function() {
+    if (!confirm(t('confirmEmptyTrash'))) return;
+    window.APP.trash = [];
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    window.UIRenderer.renderSidebar();
+    window.EventHandler.closeTrashModal();
+    window.showToast(t('trashCleared'));
+  },
+
   resetData:function() {
     if (! confirm(t('confirmReset'))) return;
 
     const initialData = window.WIKI_DATA_INITIAL || window.WIKI_DATA;
     window.APP.db = window.deepClone(initialData);
-    window.StorageManager.saveDatabase(window.APP.db);
+    window.APP.trash = [];
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
     window.UIRenderer.renderSidebar();
     window.UIRenderer.renderMainContent();
     window.showToast(t('reset'));
