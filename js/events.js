@@ -226,29 +226,89 @@ window.EventHandler = {
     }
   },
 
-  showEmojiPicker:function(type, callback) {
+  showEmojiPicker:function(type, onConfirm, onCancel) {
+    const existing = document.getElementById('emojiPickerOverlay');
+    if (existing) {
+      existing.parentNode.removeChild(existing);
+    }
+
     const emojis = window.EMOJI_OPTIONS[type] || window.EMOJI_OPTIONS.other;
-    const emojiHtml = emojis.map(function(e) {
-      return '<button style="padding:8px 12px; font-size:20px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg-tertiary); cursor:pointer; transition:all 0.2s;" onclick="' + callback + '(\'' + e + '\')">' + e + '</button>';
-    }).join('');
-
-    const picker = document.createElement('div');
-    picker.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:var(--bg-secondary); border:2px solid var(--border-color); border-radius:12px; padding:20px; z-index:3000; box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-    picker.innerHTML = '<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">' + emojiHtml + '</div>';
-    picker.onclick = function(e) { e.stopPropagation(); };
-
-    document.body.appendChild(picker);
+    let selectedEmoji = null;
 
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; inset:0; z-index:2999; background:rgba(0,0,0,0.5);';
-    overlay.onclick = function() {
-      document.body.removeChild(picker);
-      document.body.removeChild(overlay);
-    };
+    overlay.id = 'emojiPickerOverlay';
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:2999; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;';
+
+    const picker = document.createElement('div');
+    picker.style.cssText = 'background:var(--bg-secondary); border:2px solid var(--border-color); border-radius:12px; padding:20px; width:360px; max-width:90vw; box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+
+    const emojiButtons = emojis.map(function(e) {
+      return '<button class="emoji-option-btn" data-emoji="' + e + '" style="padding:8px 12px; font-size:20px; border:1px solid var(--border-light); border-radius:8px; background:var(--bg-tertiary); cursor:pointer; transition:all 0.2s;">' + e + '</button>';
+    }).join('');
+
+    picker.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-weight:600; font-size:16px;">Select an icon</div>
+        <button class="modal-close" data-action="cancel">✕</button>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-bottom:12px;">
+        ${emojiButtons}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div style="font-size:12px; color:var(--text-secondary);">Selected: <span id="selectedEmojiText">—</span></div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" data-action="cancel">Cancel</button>
+          <button class="btn btn-primary" data-action="confirm" disabled>Confirm</button>
+        </div>
+      </div>
+    `;
+
+    overlay.appendChild(picker);
     document.body.appendChild(overlay);
+
+    const updateSelection = function(emoji) {
+      selectedEmoji = emoji;
+      const text = picker.querySelector('#selectedEmojiText');
+      if (text) text.textContent = emoji;
+      const confirmBtn = picker.querySelector('[data-action="confirm"]');
+      if (confirmBtn) confirmBtn.disabled = false;
+      picker.querySelectorAll('.emoji-option-btn').forEach(function(btn) {
+        btn.style.borderColor = btn.dataset.emoji === emoji ? 'var(--accent-primary)' :'var(--border-light)';
+        btn.style.background = btn.dataset.emoji === emoji ? 'var(--accent-bg)' :'var(--bg-tertiary)';
+      });
+    };
+
+    picker.querySelectorAll('.emoji-option-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        updateSelection(btn.dataset.emoji);
+      });
+    });
+
+    const closePicker = function() {
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    };
+
+    picker.querySelectorAll('[data-action="cancel"]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        closePicker();
+        if (typeof onCancel === 'function') onCancel();
+      });
+    });
+
+    const confirmBtn = picker.querySelector('[data-action="confirm"]');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function() {
+        if (!selectedEmoji) return;
+        closePicker();
+        if (typeof onConfirm === 'function') onConfirm(selectedEmoji);
+      });
+    }
   },
 
-	editModule:function(moduleId) {
+  editModule:function(moduleId) {
 	  const module = window.DataManager.getModule(moduleId);
 	  if (!module) return;
 
@@ -262,12 +322,16 @@ window.EventHandler = {
 
 	  window.APP.pendingModuleId = moduleId;
 	  window.APP.pendingModule = module;
-	  window.EventHandler.showEmojiPicker('module', 'window.EventHandler.updateModuleIcon');
+	  window.EventHandler.showEmojiPicker('module', window.EventHandler.updateModuleIcon, function() {
+      window.APP.pendingModule = null;
+    });
 	},
 
 	updateModuleIcon:function(icon) {
 	  const module = window.APP.pendingModule;
+    if (!module) return;
 	  module.icon = icon;
+    window.APP.pendingModule = null;
 
 	  window.StorageManager.saveDatabase(window.APP.db);
 	  window.UIRenderer.renderSidebar();
@@ -280,11 +344,14 @@ window.EventHandler = {
 	  if (!moduleName) return;
 
 	  window.APP.pendingModuleName = moduleName;
-	  window.EventHandler.showEmojiPicker('module', 'window.EventHandler.createModule');
+	  window.EventHandler.showEmojiPicker('module', window.EventHandler.createModule, function() {
+      window.APP.pendingModuleName = null;
+    });
 	},
 
 	createModule:function(icon) {
 	  const moduleName = window.APP.pendingModuleName;
+    if (!moduleName) return;
 	  const parts = moduleName.split('|');
 
 	  const newModule = {
@@ -303,6 +370,7 @@ window.EventHandler = {
 	  };
 
 	  window.APP.db.push(newModule);
+    window.APP.pendingModuleName = null;
 	  window.StorageManager.saveDatabase(window.APP.db);
 	  window.UIRenderer.renderSidebar();
 	  window.UIRenderer.renderMainContent();
@@ -415,29 +483,34 @@ window.EventHandler = {
       return '<button style="padding:12px 16px; width:100%; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:6px; cursor:pointer; margin-bottom:8px; transition:all 0.2s;" onclick="window.EventHandler.selectColumnAndAddCard(\'' + col.id + '\')">' + window.txt(col.name) + '</button>';
     }).join('');
 
-    const selector = document.createElement('div');
-    selector.style.cssText = 'position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:var(--bg-secondary); border:2px solid var(--border-color); border-radius:12px; padding:20px; z-index:3000; box-shadow:0 4px 12px rgba(0,0,0,0.3); max-width:400px; width:90%;';
-    selector.innerHTML = '<h3 style="margin-bottom:16px;">Select Column</h3><div>' + colHtml + '</div>';
-    selector.onclick = function(e) { e.stopPropagation(); };
-
-    document.body.appendChild(selector);
-
     const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; inset:0; z-index:2999; background:rgba(0,0,0,0.5);';
-    overlay.onclick = function() {
-      document.body.removeChild(selector);
-      document.body.removeChild(overlay);
-    };
+    overlay.id = 'columnSelectorOverlay';
+    overlay.style.cssText = 'position:fixed; inset:0; z-index:2999; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;';
+
+    const selector = document.createElement('div');
+    selector.style.cssText = 'background:var(--bg-secondary); border:2px solid var(--border-color); border-radius:12px; padding:20px; max-width:400px; width:90%; box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+    selector.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;">Select Column</h3>
+        <button class="modal-close" onclick="window.EventHandler.closeColumnSelector()">✕</button>
+      </div>
+      <div>${colHtml}</div>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <button class="btn btn-secondary" onclick="window.EventHandler.closeColumnSelector()">Cancel</button>
+      </div>
+    `;
+
+    overlay.appendChild(selector);
     document.body.appendChild(overlay);
   },
 
-  selectColumnAndAddCard:function(columnId) {
-    document.querySelectorAll('[style*="position:fixed"]').forEach(function(el) {
-      if (el.parentNode) {
-        el.parentNode.removeChild(el);
-      }
-    });
+  closeColumnSelector:function() {
+    const overlay = document.getElementById('columnSelectorOverlay');
+    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  },
 
+  selectColumnAndAddCard:function(columnId) {
+    window.EventHandler.closeColumnSelector();
     window.EventHandler.openAddCardModal(columnId, window.APP.currentModule);
   },
 
@@ -607,9 +680,6 @@ window.EventHandler = {
 
     const overlay = document.createElement('div');
     overlay.className = 'trash-overlay';
-    overlay.onclick = function() {
-      window.EventHandler.closeTrashModal();
-    };
 
     document.body.appendChild(overlay);
     document.body.appendChild(modal);
@@ -750,9 +820,6 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    const modal = document.getElementById('modalOverlay');
-    if (modal && modal.classList.contains('active')) {
-      window.EventHandler.closeEditModal();
-    }
+    return;
   }
 });

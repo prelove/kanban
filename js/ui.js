@@ -9,6 +9,7 @@ window.UIRenderer = {
     this.renderSidebar();
     this.renderMainContent();
     this.attachUIEvents();
+    this.startClock();
   },
 
   renderHeader:function() {
@@ -26,6 +27,12 @@ window.UIRenderer = {
           <span class="search-icon">🔍</span>
           <input type="text" class="search-input" id="searchInput" 
                  placeholder="${t('search')}" oninput="window.handleSearch()">
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="header-datetime" id="headerDateTime">
+          <span class="header-date">--</span>
+          <span class="header-time">--:--:--</span>
         </div>
       </div>
       <div class="header-right">
@@ -49,6 +56,35 @@ window.UIRenderer = {
     header.innerHTML = htmlContent;
     this.renderLanguageSwitcher();
     this.updateViewButtons();
+  },
+
+  startClock:function() {
+    const updateClock = function() {
+      const container = document.getElementById('headerDateTime');
+      if (!container) return;
+      const now = new Date();
+      const locale = window.APP.lang === 'zh' ? 'zh-CN' :window.APP.lang === 'ja' ? 'ja-JP' :'en-US';
+      const dateText = now.toLocaleDateString(locale, {
+        weekday:'short',
+        month:'short',
+        day:'numeric'
+      });
+      const timeText = now.toLocaleTimeString(locale, {
+        hour:'2-digit',
+        minute:'2-digit',
+        second:'2-digit'
+      });
+      const dateEl = container.querySelector('.header-date');
+      const timeEl = container.querySelector('.header-time');
+      if (dateEl) dateEl.textContent = dateText;
+      if (timeEl) timeEl.textContent = timeText;
+    };
+
+    updateClock();
+    if (window.APP.clockInterval) {
+      clearInterval(window.APP.clockInterval);
+    }
+    window.APP.clockInterval = setInterval(updateClock, 1000);
   },
 
   updateViewButtons:function() {
@@ -104,9 +140,10 @@ window.UIRenderer = {
     for (let i = 0; i < window.APP.db.length; i++) {
       const module = window.APP.db[i];
       const isActive = window.APP.currentModule === module.id ? 'active' :'';
+      const editClass = window.APP.editMode ? 'edit-mode' :'';
 
       const itemHtml = `
-        <div class="nav-item ${isActive}" data-module-id="${module.id}" onclick="window.UIRenderer.selectModule('${module.id}')">
+        <div class="nav-item ${isActive} ${editClass}" data-module-id="${module.id}" onclick="window.UIRenderer.selectModule('${module.id}')">
           <div class="nav-item-content">
             <span class="nav-icon">${module.icon || '📁'}</span>
             <span class="nav-item-text">${window.txt(module.name)}</span>
@@ -414,6 +451,7 @@ renderGridView:function() {
     this.updateUIText();
     this.renderSidebar();
     this.renderMainContent();
+    this.startClock();
   },
 
   updateUIText:function() {
