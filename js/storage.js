@@ -165,6 +165,17 @@ window.StorageManager = {
     return stored ? JSON.parse(stored) : false;
   },
 
+  // Save collapsed columns (UI state, keyed by column id)
+  saveCollapsedColumns:function(collapsed) {
+    localStorage.setItem('dashboard_collapsed_columns', JSON.stringify(collapsed || {}));
+  },
+
+  // Load collapsed columns (UI state, keyed by column id)
+  loadCollapsedColumns:function() {
+    const stored = localStorage.getItem('dashboard_collapsed_columns');
+    return stored ? JSON.parse(stored) : {};
+  },
+
   // Download JSON file
   downloadJSON:function(db) {
     try {

@@ -59,6 +59,16 @@
   flex:1;
 }
 
+.column.collapsed .column-header {
+  margin-bottom:0;
+  border-bottom-color:transparent;
+}
+
+.column.collapsed .cards-container,
+.column.collapsed .card-add-btn {
+  display:none;
+}
+
 .card {
   background-color:var(--bg-secondary);
   border:1px solid var(--border-color);
