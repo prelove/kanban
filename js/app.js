@@ -8,7 +8,8 @@ window.APP = {
   trash:[],
   editMode:false,
   editingCard:null,
-  dashboardHidden:false
+  dashboardHidden:false,
+  collapsedColumns:{}
 };
 
 // Initialize application
@@ -24,6 +25,7 @@ async function initializeApp() {
   window.APP.lang = window.StorageManager.loadLanguage();
   window.APP.theme = window.StorageManager.loadTheme();
   window.APP.dashboardHidden = window.StorageManager.loadDashboardVisibility();
+  window.APP.collapsedColumns = window.StorageManager.loadCollapsedColumns();
 
   // Set initial data
   let storedDB = null;

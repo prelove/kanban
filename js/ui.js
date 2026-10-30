@@ -218,22 +218,24 @@ renderGridView:function() {
 
   for (let i = 0; i < module.columns.length; i++) {
     const column = module.columns[i];
+    const isCollapsed = window.APP.collapsedColumns && window.APP.collapsedColumns[column.id];
     const columnHtml = `
-      <div class="column" data-column-id="${column.id}">
+      <div class="column ${isCollapsed ? 'collapsed' :''}" data-column-id="${column.id}">
         <div class="column-header">
           <div class="column-title" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <div style="flex:1;">
               ${window.txt(column.name)}
               <span class="column-count">${column.cards.length} ${t('cards')}</span>
             </div>
-            ${window.APP.editMode ? `
-              <div style="display:flex; gap:4px; flex-shrink:0;">
+            <div style="display:flex; gap:4px; flex-shrink:0;">
+              <button class="move-btn" title="${isCollapsed ? t('expandColumn') :t('collapseColumn')}" onclick="event.stopPropagation(); window.UIRenderer.toggleColumnCollapse('${column.id}')">${isCollapsed ? '▸' :'▾'}</button>
+              ${window.APP.editMode ? `
                 <button class="move-btn" title="${t('moveUp')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', -1)">⬆️</button>
                 <button class="move-btn" title="${t('moveDown')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', 1)">⬇️</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Edit" onclick="event.stopPropagation(); window.EventHandler.editColumn('${column.id}', '${window.APP.currentModule}')">✏️</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Delete" onclick="event.stopPropagation(); window.EventHandler.deleteColumn('${column.id}', '${window.APP.currentModule}')">🗑️</button>
-              </div>
-            ` :''}
+              ` :''}
+            </div>
           </div>
         </div>
         <div class="cards-container" id="col-${column.id}"></div>
@@ -500,6 +502,17 @@ renderGridView:function() {
     window.APP.dashboardHidden = !window.APP.dashboardHidden;
     window.StorageManager.saveDashboardVisibility(window.APP.dashboardHidden);
     this.applyDashboardState();
+  },
+
+  toggleColumnCollapse:function(columnId) {
+    window.APP.collapsedColumns = window.APP.collapsedColumns || {};
+    if (window.APP.collapsedColumns[columnId]) {
+      delete window.APP.collapsedColumns[columnId];
+    } else {
+      window.APP.collapsedColumns[columnId] = true;
+    }
+    window.StorageManager.saveCollapsedColumns(window.APP.collapsedColumns);
+    this.renderMainContent();
   },
 
   renderListView:function() {
