@@ -57,8 +57,87 @@ window.EventHandler = {
   },
 
   openAddCardModal:function(columnId, moduleId) {
+    const check = window.DataManager.canEnterColumn(moduleId, columnId);
+    if (!check.allowed) {
+      this.showWipBlocked(check);
+      return;
+    }
     window.UIRenderer.selectedColumnForCard = columnId;
     this.openEditModal(null, columnId, moduleId);
+  },
+
+  showWipBlocked:function(result, notFoundKey) {
+    if (result.reason === 'notFound') {
+      window.showToast(t(notFoundKey || 'saveFailed'));
+      return;
+    }
+    const msg = t('wipLimitBlocked').replace('{count}', result.count).replace('{limit}', result.limit);
+    window.showToast(msg, 5000);
+  },
+
+  editColumnWipLimit:function(columnId, moduleId) {
+    const module = window.DataManager.getModule(moduleId);
+    if (!module) return;
+    const column = module.columns.find(function(col) { return col.id === columnId; });
+    if (!column) return;
+
+    const currentLimit = window.DataManager.getColumnWipLimit(column);
+    const input = prompt(t('wipLimitPrompt'), currentLimit || '');
+    if (input === null) return;
+
+    const trimmed = input.trim();
+    if (trimmed !== '' && !(/^\d+$/.test(trimmed) && Number.isSafeInteger(Number(trimmed)))) {
+      window.showToast(t('wipLimitInvalid'), 5000);
+      return;
+    }
+
+    const newLimit = trimmed === '' ? 0 : Number(trimmed);
+    if (newLimit === 0) {
+      delete column.wipLimit;
+    } else {
+      column.wipLimit = newLimit;
+    }
+
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    window.UIRenderer.renderMainContent();
+
+    if (newLimit > 0 && newLimit < column.cards.length) {
+      window.showToast(t('wipLimitBelowCount'), 5000);
+    } else {
+      window.showToast(t('saved'));
+    }
+  },
+
+  moveCardToColumn:function(moduleId, sourceColumnId, targetColumnId, cardId, targetIndex) {
+    const result = window.DataManager.transferCard(moduleId, sourceColumnId, targetColumnId, cardId, targetIndex);
+    if (result.moved) {
+      window.UIRenderer.renderMainContent();
+      window.UIRenderer.renderSidebar();
+    } else if (result.reason === 'wipLimit') {
+      this.showWipBlocked(result);
+    } else {
+      window.showToast(t('saveFailed'));
+    }
+    return result;
+  },
+
+  importData:function(data) {
+    if (!Array.isArray(data)) throw new Error('Invalid format');
+    for (let i = 0; i < data.length; i++) {
+      const module = data[i];
+      if (!module || typeof module !== 'object' || !Array.isArray(module.columns)) throw new Error('Invalid format');
+      for (let j = 0; j < module.columns.length; j++) {
+        const column = module.columns[j];
+        if (!column || typeof column !== 'object' || !Array.isArray(column.cards)) throw new Error('Invalid format');
+      }
+    }
+
+    window.APP.db = data;
+    window.DataManager.normalizeWipLimits(window.APP.db, window.APP.trash);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    window.APP.currentModule = window.APP.db.length > 0 ? window.APP.db[0].id : null;
+    window.UIRenderer.renderSidebar();
+    window.UIRenderer.renderMainContent();
   },
 
   openEditModal:function(cardId, columnId, moduleId) {
@@ -187,6 +266,11 @@ window.EventHandler = {
         updatedAt:new Date().toISOString().split('T')[0]
       };
 
+      const check = window.DataManager.canEnterColumn(editCard.moduleId, editCard.columnId);
+      if (!check.allowed) {
+        this.showWipBlocked(check);
+        return;
+      }
       if (window.DataManager.addCard(editCard.moduleId, editCard.columnId, newCard)) {
         window.EventHandler.closeEditModal();
         window.UIRenderer.renderMainContent();
@@ -714,9 +798,9 @@ window.EventHandler = {
     return typeLabel + ' · ' + new Date(item.deletedAt).toLocaleString();
   },
 
-  restoreTrashItem:function(index, skipModalRefresh) {
+  restoreTrashItem:function(index, skipModalRefresh, silentBlocked) {
     const item = window.APP.trash[index];
-    if (!item) return;
+    if (!item) return false;
 
     if (item.type === 'module') {
       const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : window.APP.db.length;
@@ -726,7 +810,7 @@ window.EventHandler = {
       const module = window.DataManager.getModule(item.location.moduleId);
       if (!module) {
         window.showToast(t('restoreFailed'));
-        return;
+        return false;
       }
       const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : module.columns.length;
       const safeIndex = Math.min(Math.max(insertIndex, 0), module.columns.length);
@@ -735,12 +819,19 @@ window.EventHandler = {
       const module = window.DataManager.getModule(item.location.moduleId);
       if (!module) {
         window.showToast(t('restoreFailed'));
-        return;
+        return false;
       }
       const column = module.columns.find(function(col) { return col.id === item.location.columnId; });
       if (!column) {
         window.showToast(t('restoreFailed'));
-        return;
+        return false;
+      }
+      const check = window.DataManager.canEnterColumn(item.location.moduleId, item.location.columnId);
+      if (!check.allowed) {
+        if (!silentBlocked) {
+          this.showWipBlocked(check, 'restoreFailed');
+        }
+        return false;
       }
       const insertIndex = item.location && typeof item.location.index === 'number' ? item.location.index : column.cards.length;
       const safeIndex = Math.min(Math.max(insertIndex, 0), column.cards.length);
@@ -756,6 +847,7 @@ window.EventHandler = {
       window.EventHandler.openTrashModal();
     }
     window.showToast(t('restored'));
+    return true;
   },
 
   deleteTrashItem:function(index) {
@@ -769,8 +861,19 @@ window.EventHandler = {
 
   restoreAllTrash:function() {
     const items = window.APP.trash.slice();
+    let lastBlocked = null;
     for (let i = items.length - 1; i >= 0; i--) {
-      window.EventHandler.restoreTrashItem(i, true);
+      const item = items[i];
+      const restored = window.EventHandler.restoreTrashItem(i, true, true);
+      if (!restored && item && item.type === 'card' && item.location) {
+        const check = window.DataManager.canEnterColumn(item.location.moduleId, item.location.columnId);
+        if (!check.allowed && check.reason === 'wipLimit') {
+          lastBlocked = check;
+        }
+      }
+    }
+    if (lastBlocked) {
+      this.showWipBlocked(lastBlocked);
     }
     window.EventHandler.closeTrashModal();
     window.EventHandler.openTrashModal();

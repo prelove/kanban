@@ -13,7 +13,62 @@ window.DataManager = {
 
     window.APP.db = window.deepClone(dbData || []);
     window.APP.trash = window.deepClone(trashData || []);
+    this.normalizeWipLimits(window.APP.db, window.APP.trash);
     window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+  },
+
+  // Get effective WIP limit for a column (0 = unlimited)
+  getColumnWipLimit:function(column) {
+    if (column && Number.isSafeInteger(column.wipLimit) && column.wipLimit > 0) {
+      return column.wipLimit;
+    }
+    return 0;
+  },
+
+  // Check whether a card may enter a column (capacity check only, no mutation)
+  canEnterColumn:function(moduleId, columnId) {
+    const module = this.getModule(moduleId);
+    if (!module) return { allowed:false, reason:'notFound' };
+    const column = module.columns.find(function(col) { return col.id === columnId; });
+    if (!column) return { allowed:false, reason:'notFound' };
+    const limit = this.getColumnWipLimit(column);
+    if (limit === 0 || column.cards.length < limit) return { allowed:true };
+    return { allowed:false, reason:'wipLimit', count:column.cards.length, limit:limit };
+  },
+
+  // Remove malformed wipLimit properties in place
+  normalizeWipLimits:function(db, trash) {
+    const normalizeColumn = function(column, getLimit) {
+      if (!column || typeof column !== 'object') return;
+      if (Object.prototype.hasOwnProperty.call(column, 'wipLimit') && getLimit(column) === 0) {
+        delete column.wipLimit;
+      }
+    };
+    const getLimit = this.getColumnWipLimit;
+
+    if (Array.isArray(db)) {
+      for (let i = 0; i < db.length; i++) {
+        const module = db[i];
+        if (!module || !Array.isArray(module.columns)) continue;
+        for (let j = 0; j < module.columns.length; j++) {
+          normalizeColumn(module.columns[j], getLimit);
+        }
+      }
+    }
+
+    if (Array.isArray(trash)) {
+      for (let i = 0; i < trash.length; i++) {
+        const item = trash[i];
+        if (!item || typeof item !== 'object' || !item.data) continue;
+        if (item.type === 'column') {
+          normalizeColumn(item.data, getLimit);
+        } else if (item.type === 'module' && Array.isArray(item.data.columns)) {
+          for (let j = 0; j < item.data.columns.length; j++) {
+            normalizeColumn(item.data.columns[j], getLimit);
+          }
+        }
+      }
+    }
   },
 
   // Get module by ID
@@ -62,12 +117,48 @@ window.DataManager = {
 
     for (let i = 0; i < module.columns.length; i++) {
       if (module.columns[i].id === columnId) {
+        const check = this.canEnterColumn(moduleId, columnId);
+        if (!check.allowed) return false;
         module.columns[i].cards.push(card);
         window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
         return true;
       }
     }
     return false;
+  },
+
+  // Transfer a card to another column (or reorder within the same column)
+  transferCard:function(moduleId, sourceColumnId, targetColumnId, cardId, targetIndex) {
+    const module = this.getModule(moduleId);
+    if (!module) return { moved:false, reason:'notFound' };
+    const sourceColumn = module.columns.find(function(col) { return col.id === sourceColumnId; });
+    const targetColumn = module.columns.find(function(col) { return col.id === targetColumnId; });
+    if (!sourceColumn || !targetColumn) return { moved:false, reason:'notFound' };
+    const cardIndex = sourceColumn.cards.findIndex(function(card) { return card.id === cardId; });
+    if (cardIndex === -1) return { moved:false, reason:'notFound' };
+
+    if (targetIndex !== undefined && !Number.isInteger(targetIndex)) {
+      return { moved:false, reason:'invalidIndex' };
+    }
+
+    if (sourceColumn !== targetColumn) {
+      const check = this.canEnterColumn(moduleId, targetColumnId);
+      if (!check.allowed) {
+        const result = { moved:false, reason:check.reason };
+        if (check.reason === 'wipLimit') {
+          result.count = check.count;
+          result.limit = check.limit;
+        }
+        return result;
+      }
+    }
+
+    const card = sourceColumn.cards.splice(cardIndex, 1)[0];
+    let insertIndex = (targetIndex === undefined) ? targetColumn.cards.length : targetIndex;
+    insertIndex = Math.min(Math.max(insertIndex, 0), targetColumn.cards.length);
+    targetColumn.cards.splice(insertIndex, 0, card);
+    window.StorageManager.saveDatabase(window.APP.db, window.APP.trash);
+    return { moved:true };
   },
 
   // Update card
