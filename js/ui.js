@@ -219,19 +219,23 @@ renderGridView:function() {
   for (let i = 0; i < module.columns.length; i++) {
     const column = module.columns[i];
     const isCollapsed = window.APP.collapsedColumns && window.APP.collapsedColumns[column.id];
+    const wipLimit = window.DataManager.getColumnWipLimit(column);
+    const limitReached = wipLimit > 0 && column.cards.length >= wipLimit;
+    const countText = wipLimit > 0 ? `${column.cards.length} / ${wipLimit} ${t('cards')}` : `${column.cards.length} ${t('cards')}`;
     const columnHtml = `
       <div class="column ${isCollapsed ? 'collapsed' :''}" data-column-id="${column.id}">
         <div class="column-header">
           <div class="column-title" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <div style="flex:1;">
               ${window.txt(column.name)}
-              <span class="column-count">${column.cards.length} ${t('cards')}</span>
+              <span class="column-count ${limitReached ? 'wip-limit-reached' :''}">${countText}</span>
             </div>
             <div style="display:flex; gap:4px; flex-shrink:0;">
               <button class="move-btn" title="${isCollapsed ? t('expandColumn') :t('collapseColumn')}" onclick="event.stopPropagation(); window.UIRenderer.toggleColumnCollapse('${column.id}')">${isCollapsed ? '▸' :'▾'}</button>
               ${window.APP.editMode ? `
                 <button class="move-btn" title="${t('moveUp')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', -1)">⬆️</button>
                 <button class="move-btn" title="${t('moveDown')}" onclick="event.stopPropagation(); window.EventHandler.moveColumn('${window.APP.currentModule}', '${column.id}', 1)">⬇️</button>
+                <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="${t('setWipLimit')}" aria-label="${t('setWipLimit')}" onclick="event.stopPropagation(); window.EventHandler.editColumnWipLimit('${column.id}', '${window.APP.currentModule}')">WIP</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Edit" onclick="event.stopPropagation(); window.EventHandler.editColumn('${column.id}', '${window.APP.currentModule}')">✏️</button>
                 <button style="padding:4px 8px; background:var(--bg-tertiary); border:1px solid var(--border-light); border-radius:4px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="Delete" onclick="event.stopPropagation(); window.EventHandler.deleteColumn('${column.id}', '${window.APP.currentModule}')">🗑️</button>
               ` :''}

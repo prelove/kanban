@@ -357,7 +357,7 @@
 	  <button class="admin-btn" onclick="window.StorageManager.downloadJSON(window.APP.db)">
 	    <span>📥</span><span id="exportText">Export JSON</span>
 	  </button>
-	  <button class="admin-btn" onclick="window.StorageManager.importJSON(function(data) { window.APP.db = data; window.UIRenderer.renderSidebar(); window.UIRenderer.renderMainContent(); })">
+	  <button class="admin-btn" onclick="window.StorageManager.importJSON(function(data) { window.EventHandler.importData(data); })">
 	    <span>📤</span><span id="importText">Import JSON</span>
 	  </button>
 	  <button class="admin-btn danger" onclick="window.EventHandler.resetData()">
