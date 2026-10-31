@@ -58,6 +58,19 @@ dashboard/ ├── index.html ├── css/ (5 files) ├── js/ (8 files)
 
 Chrome, Firefox, Safari, Edge (latest versions)
 
+## Collaboration & Sync (GitHub ↔ Gitee)
+
+This repository lives on two platforms:
+
+- GitHub (primary development): https://github.com/prelove/kanban
+- Gitee (collaboration in mainland China): https://gitee.com/prelove/kanban
+
+How we work:
+
+- On either platform: feature branch → pull request → merge into `main`. Never push directly to `main`, never force-push.
+- The two `main` branches are kept in sync incrementally: pull the other side's latest, resolve any conflicts locally, push to your own side first, then sync the merged result to the other side (a clean fast-forward).
+- A full overwrite (cover) is used only for backups or one-off seeding, never for day-to-day collaboration.
+
 ## License
 
 Internal use only
