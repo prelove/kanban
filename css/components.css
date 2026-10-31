@@ -153,6 +153,34 @@
   flex-wrap:wrap;
 }
 
+.card-due-date {
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:4px;
+  background-color:var(--bg-tertiary);
+  color:var(--text-secondary);
+}
+
+.card-due-date.overdue {
+  background-color:#ffebee;
+  color:#b71c1c;
+}
+
+.card-due-date.due-today {
+  background-color:#fff3e0;
+  color:#9a5700;
+}
+
+[data-theme="dark"] .card-due-date.overdue {
+  background-color:#4a2026;
+  color:#ff8a80;
+}
+
+[data-theme="dark"] .card-due-date.due-today {
+  background-color:#49351c;
+  color:#ffcc80;
+}
+
 .card-tag {
   font-size:11px;
   padding:3px 8px;
