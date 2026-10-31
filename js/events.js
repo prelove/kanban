@@ -122,6 +122,10 @@ window.EventHandler = {
         <input type="text" class="form-input" id="eTags" placeholder="tag1, tag2, tag3" value="${card && card.tags ? card.tags.join(', ') :''}">
       </div>
       <div class="form-group">
+        <label class="form-label" for="eDueDate">${t('dueDate')}</label>
+        <input type="date" class="form-input" id="eDueDate" value="${window.escapeHtml(card && card.dueDate ? card.dueDate :'')}">
+      </div>
+      <div class="form-group">
         <label class="form-label">${t('expiryDate')}</label>
         <input type="date" class="form-input" id="eExpiryDate" value="${card && card.expiryDate ? card.expiryDate :''}">
       </div>
@@ -144,6 +148,7 @@ window.EventHandler = {
     const content = document.getElementById('eContent').value;
     const priority = document.getElementById('ePriority').value;
     const tags = document.getElementById('eTags').value.split(',').map(function(t) { return t.trim(); }).filter(function(t) { return t.length > 0; });
+    const dueDate = document.getElementById('eDueDate').value;
     const expiryDate = document.getElementById('eExpiryDate').value;
     const author = document.getElementById('eAuthor').value;
 
@@ -156,6 +161,7 @@ window.EventHandler = {
         content:content,
         priority:priority,
         tags:tags,
+        dueDate:dueDate,
         expiryDate:expiryDate,
         author:author
       };
@@ -175,6 +181,7 @@ window.EventHandler = {
         pinned:false,
         tags:tags,
         status:'active',
+        dueDate:dueDate,
         expiryDate:expiryDate,
         author:author,
         updatedAt:new Date().toISOString().split('T')[0]

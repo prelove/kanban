@@ -307,6 +307,13 @@ renderGridView:function() {
       }
     }
 
+    if (card.dueDate) {
+      const now = new Date();
+      const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      const dueClass = card.dueDate < today ? ' overdue' :(card.dueDate === today ? ' due-today' :'');
+      metaHtml += `<span class="card-due-date${dueClass}">${t('dueDate')}: ${window.escapeHtml(card.dueDate)}</span>`;
+    }
+
     let tagsHtml = '';
     if (card.tags && card.tags.length > 0) {
       for (let i = 0; i < card.tags.length; i++) {
