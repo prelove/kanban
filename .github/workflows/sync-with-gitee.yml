@@ -1,0 +1,83 @@
+# Draft v0.1 (beauty, 2026-10-31) — Bidirectional merge-sync bot, GitHub-hosted leg.
+# Model: GitHub and Gitee are two remotes of the same repo. This workflow keeps
+# the two `main` branches convergent with REAL merges (never force-push):
+#   1. Fetch both mains.
+#   2. If gitee/main has commits main lacks -> merge gitee/main into main.
+#   3. Push the merged main to GitHub, then fast-forward Gitee's main to it.
+# On merge conflict: abort, print conflicted files, fail the run (a human or
+# beauty resolves; the bot never auto-resolves and never force-pushes).
+#
+# Required repo secret: GITEE_TOKEN — a Gitee personal access token with
+# write access to the Gitee repo (stored only in GitHub Secrets, added by the
+# user in the browser; never in chat, never in this file).
+#
+# NOTE: pushing to Gitee over HTTPS uses the token as the password:
+#   https://<gitee-username>:<token>@gitee.com/<owner>/<repo>.git
+
+name: sync-with-gitee
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "17 22 * * *"   # daily 07:17 JST (22:17 UTC) — off-peak minute
+  # Optional: also sync shortly after pushes to main
+  # push:
+  #   branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gitee-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure bot identity and Gitee remote
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          git config user.name "sync-bot"
+          git config user.email "sync-bot@users.noreply.github.com"
+          git remote add gitee "https://prelove:${GITEE_TOKEN}@gitee.com/prelove/kanban.git"
+          git fetch origin main
+          git fetch gitee main
+
+      - name: Merge Gitee main into GitHub main (if it advanced)
+        id: merge
+        run: |
+          if git merge-base --is-ancestor gitee/main main; then
+            echo "Gitee main already contained in main; nothing to merge."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            if git merge --no-ff gitee/main -m "Merge Gitee main (sync)"; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Merge conflict between GitHub main and Gitee main."
+              echo "Conflicted files:"
+              git diff --name-only --diff-filter=U
+              git merge --abort
+              exit 1
+            fi
+          fi
+
+      - name: Push merged main to GitHub
+        if: steps.merge.outputs.changed == 'true'
+        run: git push origin main
+
+      - name: Fast-forward Gitee main to the merged main
+        run: |
+          if git merge-base --is-ancestor gitee/main main; then
+            git push gitee main
+          else
+            echo "::error::Gitee main is not an ancestor of merged main; refusing to push (would not fast-forward)."
+            exit 1
+          fi
